@@ -1,87 +1,79 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 
-const SinglyLinkedList = struct {
-    head: ?*Node,
-    allocator: Allocator,
-    const Node = struct { data: u32, next: ?*Node };
+pub fn SinglyLinkedList(comptime T: type) type {
+    return struct {
+        const Self = @This();
 
-    pub fn init(allocator: Allocator) SinglyLinkedList {
-        return .{
-            .head = null,
-            .allocator = allocator,
+        pub const Node = struct {
+            next: ?*Node = null,
+            data: T,
         };
-    }
 
-    pub fn deinit(self: *SinglyLinkedList) void {
-        var current = self.head;
-        while (current) |cur| {
-            current = cur.next;
-            self.allocator.destroy(cur);
-        }
-        self.head = undefined;
-    }
+        head: ?*Node = null,
 
-    pub fn add(self: *SinglyLinkedList, data: u32) !void {
-        const node = try self.allocator.create(Node);
-        node.* = .{
-            .next = null,
-            .data = data,
-        };
-        if (self.head == null) {
-            self.head = node;
-        } else {
-            var aux: ?*Node = self.head;
-            while (aux) |auxNode| {
-                if (auxNode.next == null) {
-                    auxNode.next = node;
-                    break;
-                }
-                aux = auxNode.next;
-            }
-        }
-    }
-
-    pub fn reverse(self: *SinglyLinkedList) void {
-        var current: ?*Node = self.head;
-        var prev: ?*Node = null;
-        var next: ?*Node = null;
-
-        while (current != null) {
-            next = current.?.next;
-            current.?.next = prev;
-            prev = current;
-            current = next;
-        }
-        self.head = prev orelse null;
-    }
-
-    pub fn printList(self: *SinglyLinkedList) void {
-        var current = self.head;
-        while (current) |c| {
-            if (c.next == null) {
-                std.debug.print("{}. \n", .{c.data});
+        pub fn add(self: *Self, new_node: *Node) void {
+            new_node.next = null;
+            if (self.head == null) {
+                self.head = new_node;
             } else {
-                std.debug.print("{}, ", .{c.data});
+                var aux: ?*Node = self.head;
+                while (aux) |auxNode| {
+                    if (auxNode.next == null) {
+                        auxNode.next = new_node;
+                        break;
+                    }
+                    aux = auxNode.next;
+                }
             }
-            current = c.next;
         }
-    }
-};
+
+        pub fn printList(self: *Self) void {
+            var current = self.head;
+            while (current) |cur| {
+                if (cur.next != null) {
+                    std.debug.print("{}, ", .{cur.data});
+                } else {
+                    std.debug.print("{}.\n", .{cur.data});
+                }
+
+                current = cur.next;
+            }
+        }
+
+        pub fn reverse(self: *Self) void {
+            var current: ?*Node = self.head;
+            var prev: ?*Node = null;
+            var next: ?*Node = null;
+
+            while (current != null) {
+                next = current.?.next;
+                current.?.next = prev;
+                prev = current;
+                current = next;
+            }
+            self.head = prev orelse null;
+        }
+    };
+}
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    const L = SinglyLinkedList(u32);
+    var list = L{};
 
-    const allocator = gpa.allocator();
-    var list = SinglyLinkedList.init(allocator);
-    defer list.deinit();
+    var one = L.Node{ .data = 1 };
+    var two = L.Node{ .data = 2 };
+    var three = L.Node{ .data = 3 };
+    var four = L.Node{ .data = 4 };
+    var five = L.Node{ .data = 5 };
+    var seven = L.Node{ .data = 7 };
 
-    try list.add(10);
-    try list.add(5);
-    try list.add(7);
-    try list.add(1);
-    try list.add(8);
+    list.add(&seven);
+    list.add(&two);
+    list.add(&one);
+    list.add(&four);
+    list.add(&three);
+    list.add(&five);
 
     list.printList();
     list.reverse();
